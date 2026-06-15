@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#0A0F1E"/>
+<title>NexaHunters</title>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ SPLASH -->
+<div id="screen-splash" class="screen active">
+  <div class="splash-bg">
+    <div class="splash-orb orb1"></div>
+    <div class="splash-orb orb2"></div>
+    <div class="splash-orb orb3"></div>
+    <div class="particles" id="particles"></div>
+  </div>
+  <div class="splash-content">
+    <div class="logo-wrap">
+      <div class="logo-icon">⬡</div>
+      <h1 class="logo-title">NEXA<span>HUNTERS</span></h1>
+      <p class="logo-sub">Discover • Catch • Battle</p>
+    </div>
+    <div class="splash-form">
+      <div class="form-group">
+        <label>Trainer Name</label>
+        <input id="inp-username" type="text" placeholder="Enter your name..." maxlength="20" autocomplete="off"/>
+      </div>
+      <button id="btn-play" class="btn-primary btn-glow">
+        <span>START ADVENTURE</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="5,3 19,12 5,21"/>
+        </svg>
+      </button>
+      <p class="loc-note" id="loc-note">📍 Location access recommended for full experience</p>
+    </div>
+    <div class="offline-badge hidden" id="offline-badge">⚡ Offline Mode</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ MAP -->
+<div id="screen-map" class="screen hidden">
+  <div id="map"></div>
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <div class="tb-left">
+      <div class="player-avatar-mini" id="tb-avatar">🎮</div>
+      <div class="player-info">
+        <span class="player-name" id="tb-name">Trainer</span>
+        <span class="player-level" id="tb-level">Lv.1</span>
+      </div>
+    </div>
+    <div class="tb-center">
+      <div class="online-badge" id="online-badge">
+        <span class="online-dot"></span>
+        <span id="online-count">0 online</span>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="tb-xp" style="width:0%"></div>
+      </div>
+      <span class="xp-label" id="tb-xp-label">0 XP</span>
+    </div>
+  </div>
+
+  <!-- NEARBY RADAR -->
+  <div id="radar-panel">
+    <div class="radar-title">📡 Nearby</div>
+    <div id="radar-list"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div id="bottom-nav">
+    <button class="nav-btn" id="nav-map" onclick="Game.showScreen('map')">
+      <span class="nav-icon">🗺️</span><span class="nav-label">Map</span>
+    </button>
+    <button class="nav-btn" id="nav-scan" onclick="Game.scanArea()">
+      <span class="nav-icon scan-pulse">🔍</span><span class="nav-label">Scan</span>
+    </button>
+    <button class="nav-btn" id="nav-collection" onclick="Game.showScreen('collection')">
+      <span class="nav-icon">📦</span><span class="nav-label">Collection</span>
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="Game.showScreen('profile')">
+      <span class="nav-icon">👤</span><span class="nav-label">Profile</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ ENCOUNTER -->
+<div id="screen-encounter" class="screen hidden">
+  <div class="encounter-bg" id="enc-bg"></div>
+  <div class="encounter-content">
+    <div class="enc-header">
+      <span class="enc-rarity" id="enc-rarity">RARE</span>
+      <h2 class="enc-name" id="enc-name">Luminos</h2>
+      <p class="enc-title" id="enc-title">Star Guardian</p>
+    </div>
+
+    <div class="enc-creature-wrap">
+      <div class="enc-aura" id="enc-aura"></div>
+      <div class="enc-svg-wrap" id="enc-svg"></div>
+      <div class="enc-shadow"></div>
+    </div>
+
+    <div class="enc-stats">
+      <div class="stat-chip"><span class="stat-icon">⚔️</span><span id="enc-atk">—</span></div>
+      <div class="stat-chip"><span class="stat-icon">🛡️</span><span id="enc-def">—</span></div>
+      <div class="stat-chip"><span class="stat-icon">💨</span><span id="enc-spd">—</span></div>
+      <div class="stat-chip"><span class="stat-icon">⭐</span><span id="enc-level">Lv.1</span></div>
+    </div>
+
+    <p class="enc-type-badge" id="enc-type">LIGHT</p>
+
+    <div class="enc-actions">
+      <button id="btn-battle" class="btn-battle">⚔️ Battle!</button>
+      <button id="btn-flee" class="btn-flee">🏃 Run</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ BATTLE -->
+<div id="screen-battle" class="screen hidden">
+  <div class="battle-scene">
+    <!-- Wild side -->
+    <div class="battle-half battle-top">
+      <div class="fighter-area">
+        <div class="fighter-info">
+          <div class="fighter-name-row">
+            <span class="fighter-name" id="b-wild-name">Enemy</span>
+            <span class="fighter-level" id="b-wild-level">Lv.?</span>
+          </div>
+          <div class="hp-bar-wrap">
+            <div class="hp-bar-fill enemy-hp" id="b-wild-hp-fill" style="width:100%"></div>
+          </div>
+          <div class="hp-label"><span id="b-wild-hp-text">100/100</span></div>
+        </div>
+        <div class="fighter-sprite wild-sprite" id="b-wild-svg"></div>
+      </div>
+    </div>
+
+    <!-- Player side -->
+    <div class="battle-half battle-bottom">
+      <div class="fighter-area reverse">
+        <div class="fighter-info">
+          <div class="fighter-name-row">
+            <span class="fighter-name" id="b-player-name">My Creature</span>
+            <span class="fighter-level" id="b-player-level">Lv.5</span>
+          </div>
+          <div class="hp-bar-wrap">
+            <div class="hp-bar-fill player-hp" id="b-player-hp-fill" style="width:100%"></div>
+          </div>
+          <div class="hp-label"><span id="b-player-hp-text">100/100</span></div>
+        </div>
+        <div class="fighter-sprite player-sprite" id="b-player-svg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Battle log -->
+  <div id="battle-log">
+    <p id="battle-log-text">Battle started!</p>
+  </div>
+
+  <!-- Action panel -->
+  <div id="battle-actions" class="battle-actions">
+    <div id="move-panel" class="move-panel">
+      <button class="move-btn" data-idx="0" id="move-0"></button>
+      <button class="move-btn" data-idx="1" id="move-1"></button>
+      <button class="move-btn" data-idx="2" id="move-2"></button>
+      <button class="move-btn" data-idx="3" id="move-3"></button>
+    </div>
+    <div class="battle-util-row">
+      <button id="btn-catch" class="btn-catch">🔮 Catch</button>
+      <button id="btn-run" class="btn-run">🏃 Run</button>
+    </div>
+  </div>
+
+  <!-- Hit flash overlay -->
+  <div id="hit-flash" class="hit-flash hidden"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ COLLECTION -->
+<div id="screen-collection" class="screen hidden">
+  <div class="screen-header">
+    <button class="back-btn" onclick="Game.showScreen('map')">← Back</button>
+    <h2>My Collection</h2>
+    <span id="coll-count">0 / 8</span>
+  </div>
+  <div id="collection-grid" class="collection-grid">
+    <div class="empty-state" id="coll-empty">
+      <div class="empty-icon">📭</div>
+      <p>No creatures yet!</p>
+      <p class="empty-sub">Go explore the map to find and catch creatures.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ PROFILE -->
+<div id="screen-profile" class="screen hidden">
+  <div class="screen-header">
+    <button class="back-btn" onclick="Game.showScreen('map')">← Back</button>
+    <h2>Profile</h2>
+  </div>
+  <div class="profile-content">
+    <div class="profile-card">
+      <div class="profile-avatar" id="prof-avatar">🎮</div>
+      <h3 id="prof-name">Trainer</h3>
+      <p class="prof-title" id="prof-title">Novice Hunter</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-num" id="stat-level">1</div>
+        <div class="stat-lbl">Level</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-xp">0</div>
+        <div class="stat-lbl">Total XP</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-caught">0</div>
+        <div class="stat-lbl">Caught</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-unique">0</div>
+        <div class="stat-lbl">Unique</div>
+      </div>
+    </div>
+    <div class="nexadex-section">
+      <h3>NexaDex</h3>
+      <div id="nexadex-grid" class="nexadex-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ RESULT MODAL -->
+<div id="modal" class="modal hidden">
+  <div class="modal-backdrop" onclick="Game.closeModal()"></div>
+  <div class="modal-card" id="modal-card">
+    <div class="modal-icon" id="modal-icon">✨</div>
+    <h2 class="modal-title" id="modal-title">Success!</h2>
+    <p class="modal-body" id="modal-body"></p>
+    <button class="btn-primary" onclick="Game.closeModal()">Continue</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ TOAST -->
+<div id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/game.js"></script>
+</body>
+</html>
