@@ -1,135 +1,366 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Royal Blackjack</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="/css/style.css"/>
-</head>
-<body>
+const express = require('express');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 
-<!-- LOBBY -->
-<div id="screen-lobby" class="screen active">
-  <div class="lobby-felt"></div>
-  <div class="lobby-vignette"></div>
-  <div class="lobby-wrap">
-    <header class="casino-header">
-      <div class="header-line"></div>
-      <h1 class="casino-title">ROYAL BLACKJACK</h1>
-      <div class="header-suits">♠ ♥ ♦ ♣</div>
-      <div class="header-line"></div>
-    </header>
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: '*' },
+  pingTimeout: 30000,
+  pingInterval: 10000
+});
 
-    <div class="lobby-card">
-      <div class="lobby-fields">
-        <label>Your Name</label>
-        <input id="inp-name" type="text" placeholder="Enter name..." maxlength="16"/>
-        <label style="margin-top:16px">Choose Avatar</label>
-        <div class="avatar-grid" id="avatar-grid"></div>
-      </div>
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
-      <div class="lobby-actions">
-        <button class="btn-casino btn-gold" id="btn-create">Create Table</button>
-        <div class="divider"><span>or join existing</span></div>
-        <div class="join-row">
-          <input id="inp-code" type="text" placeholder="Table code..." maxlength="5" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:18px"/>
-          <button class="btn-casino btn-green" id="btn-join">Join →</button>
-        </div>
-      </div>
-    </div>
+// ─── CREATURE DEFINITIONS ────────────────────────────────────────────────────
+const CREATURE_DEFS = [
+  {
+    id: 'lumin', name: 'Lumin', title: 'Light Weaver',
+    type: 'light', rarity: 'legendary',
+    baseHp: 150, baseAtk: 95, baseDef: 85, baseSpd: 100,
+    catchRate: 0.05, xpReward: 500, spawnWeight: 1,
+    colors: { primary: '#FFD700', secondary: '#FFF9C4', glow: '#FFEB3B', bg: '#FFF8E1' },
+    abilities: [
+      { name: 'Solar Flare', power: 45, type: 'light', pp: 15 },
+      { name: 'Star Fall',   power: 65, type: 'light', pp: 10 },
+      { name: 'Radiance',    power: 30, type: 'light', pp: 20, heal: 20 },
+      { name: 'Nova Burst',  power: 90, type: 'light', pp: 5 }
+    ]
+  },
+  {
+    id: 'blazor', name: 'Blazor', title: 'Fire Born',
+    type: 'fire', rarity: 'rare',
+    baseHp: 120, baseAtk: 110, baseDef: 65, baseSpd: 90,
+    catchRate: 0.1, xpReward: 300, spawnWeight: 5,
+    colors: { primary: '#FF4500', secondary: '#FF8C00', glow: '#FF6B35', bg: '#FBE9E7' },
+    abilities: [
+      { name: 'Ember Bite',    power: 40, type: 'fire', pp: 20 },
+      { name: 'Dragon Flame',  power: 70, type: 'fire', pp: 10 },
+      { name: 'Scale Armor',   power: 0,  type: 'fire', pp: 15, selfBuff: 'def' },
+      { name: 'Inferno',       power: 100, type: 'fire', pp: 5 }
+    ]
+  },
+  {
+    id: 'wavix', name: 'Wavix', title: 'Tide Rider',
+    type: 'water', rarity: 'uncommon',
+    baseHp: 130, baseAtk: 75, baseDef: 90, baseSpd: 85,
+    catchRate: 0.15, xpReward: 200, spawnWeight: 8,
+    colors: { primary: '#0288D1', secondary: '#4FC3F7', glow: '#29B6F6', bg: '#E1F5FE' },
+    abilities: [
+      { name: 'Water Jet',    power: 35, type: 'water', pp: 25 },
+      { name: 'Tidal Wave',   power: 75, type: 'water', pp: 10 },
+      { name: 'Bubble Shield',power: 0,  type: 'water', pp: 20, selfBuff: 'def' },
+      { name: 'Whirlpool',    power: 85, type: 'water', pp: 5 }
+    ]
+  },
+  {
+    id: 'fernox', name: 'Fernox', title: 'Grove Guard',
+    type: 'nature', rarity: 'uncommon',
+    baseHp: 110, baseAtk: 80, baseDef: 80, baseSpd: 95,
+    catchRate: 0.15, xpReward: 200, spawnWeight: 8,
+    colors: { primary: '#2E7D32', secondary: '#A5D6A7', glow: '#66BB6A', bg: '#E8F5E9' },
+    abilities: [
+      { name: 'Leaf Blade',    power: 40, type: 'nature', pp: 20 },
+      { name: 'Petal Storm',   power: 65, type: 'nature', pp: 12 },
+      { name: 'Heal Bloom',    power: 0,  type: 'nature', pp: 15, heal: 30 },
+      { name: "Nature's Wrath",power: 90, type: 'nature', pp: 5 }
+    ]
+  },
+  {
+    id: 'joltz', name: 'Joltz', title: 'Storm Runner',
+    type: 'electric', rarity: 'rare',
+    baseHp: 100, baseAtk: 105, baseDef: 70, baseSpd: 115,
+    catchRate: 0.1, xpReward: 300, spawnWeight: 5,
+    colors: { primary: '#F9A825', secondary: '#FFF176', glow: '#FFEE58', bg: '#FFFDE7' },
+    abilities: [
+      { name: 'Shock Fang',    power: 40, type: 'electric', pp: 20 },
+      { name: 'Thunder Strike',power: 75, type: 'electric', pp: 12 },
+      { name: 'Static Aura',   power: 0,  type: 'electric', pp: 15, selfBuff: 'spd' },
+      { name: 'Thunderclap',   power: 95, type: 'electric', pp: 5 }
+    ]
+  },
+  {
+    id: 'vexon', name: 'Vexon', title: 'Dark Stalker',
+    type: 'dark', rarity: 'rare',
+    baseHp: 115, baseAtk: 100, baseDef: 75, baseSpd: 105,
+    catchRate: 0.1, xpReward: 300, spawnWeight: 5,
+    colors: { primary: '#6A1B9A', secondary: '#CE93D8', glow: '#AB47BC', bg: '#F3E5F5' },
+    abilities: [
+      { name: 'Shadow Claw',   power: 45, type: 'dark', pp: 20 },
+      { name: 'Void Strike',   power: 70, type: 'dark', pp: 12 },
+      { name: 'Phantom Veil',  power: 0,  type: 'dark', pp: 15, selfBuff: 'def' },
+      { name: 'Darkness Surge',power: 95, type: 'dark', pp: 5 }
+    ]
+  },
+  {
+    id: 'frigix', name: 'Frigix', title: 'Frost Bringer',
+    type: 'ice', rarity: 'uncommon',
+    baseHp: 105, baseAtk: 85, baseDef: 95, baseSpd: 80,
+    catchRate: 0.15, xpReward: 200, spawnWeight: 8,
+    colors: { primary: '#0097A7', secondary: '#B2EBF2', glow: '#00BCD4', bg: '#E0F7FA' },
+    abilities: [
+      { name: 'Ice Shard',    power: 35,  type: 'ice', pp: 25 },
+      { name: 'Blizzard',     power: 70,  type: 'ice', pp: 10 },
+      { name: 'Ice Armor',    power: 0,   type: 'ice', pp: 20, selfBuff: 'def' },
+      { name: 'Absolute Zero',power: 100, type: 'ice', pp: 5 }
+    ]
+  },
+  {
+    id: 'stonex', name: 'Stonex', title: 'Earth Crusher',
+    type: 'earth', rarity: 'common',
+    baseHp: 160, baseAtk: 70, baseDef: 120, baseSpd: 45,
+    catchRate: 0.25, xpReward: 100, spawnWeight: 15,
+    colors: { primary: '#5D4037', secondary: '#A1887F', glow: '#8D6E63', bg: '#EFEBE9' },
+    abilities: [
+      { name: 'Rock Smash',   power: 40, type: 'earth', pp: 20 },
+      { name: 'Seismic Slam', power: 70, type: 'earth', pp: 12 },
+      { name: 'Earth Wall',   power: 0,  type: 'earth', pp: 15, selfBuff: 'def' },
+      { name: 'Earthquake',   power: 90, type: 'earth', pp: 5 }
+    ]
+  }
+];
 
-    <div class="lobby-card hidden" id="waiting-card">
-      <div class="table-code-display">
-        <span class="code-label">Table Code</span>
-        <span class="code-value" id="code-display">—</span>
-        <button class="copy-btn" id="btn-copy">Copy</button>
-      </div>
-      <p class="code-hint">Share with friends to join your table</p>
-      <div id="lobby-players"></div>
-      <button class="btn-casino btn-gold hidden" id="btn-start">Deal Cards →</button>
-      <p class="host-hint" id="host-hint">Waiting for host to start...</p>
-    </div>
-  </div>
-</div>
+// ─── GAME STATE ───────────────────────────────────────────────────────────────
+const worldCreatures = new Map();
+const players = new Map();
+const activeBattles = new Map();
 
-<!-- GAME TABLE -->
-<div id="screen-game" class="screen hidden">
-  <div class="table-felt"></div>
-  <div class="table-vignette"></div>
+function weightedRandom(defs) {
+  const total = defs.reduce((s, d) => s + d.spawnWeight, 0);
+  let r = Math.random() * total;
+  for (const d of defs) {
+    r -= d.spawnWeight;
+    if (r <= 0) return d;
+  }
+  return defs[defs.length - 1];
+}
 
-  <div id="game-wrap">
-    <!-- TOP BAR -->
-    <div id="top-bar">
-      <div class="tb-left">
-        <span class="table-id-badge" id="tb-code"></span>
-      </div>
-      <div class="tb-center">
-        <span id="phase-label"></span>
-      </div>
-      <div class="tb-right" id="tb-timer"></div>
-    </div>
+function spawnCreatureNear(lat, lng) {
+  const def = weightedRandom(CREATURE_DEFS);
+  const id = uuidv4();
+  const creature = {
+    id,
+    defId: def.id,
+    lat: lat + (Math.random() - 0.5) * 0.009,
+    lng: lng + (Math.random() - 0.5) * 0.012,
+    level: Math.floor(Math.random() * 15) + 1,
+    expiresAt: Date.now() + 5 * 60 * 1000
+  };
+  worldCreatures.set(id, creature);
+  return creature;
+}
 
-    <!-- DEALER AREA -->
-    <div id="dealer-zone">
-      <div class="dealer-label">D E A L E R</div>
-      <div id="dealer-cards" class="card-row"></div>
-      <div id="dealer-value" class="hand-value"></div>
-    </div>
+function initWorldCreatures() {
+  const hotspots = [
+    [40.7128, -74.006], [51.5074, -0.1278], [48.8566, 2.3522],
+    [35.6762, 139.650], [-33.868, 151.209], [19.432, -99.133],
+    [55.755, 37.617],   [-23.55, -46.633],  [1.3521, 103.819],
+    [28.613, 77.209],   [37.774, -122.41],  [41.878, -87.629]
+  ];
+  for (const [lat, lng] of hotspots) {
+    for (let i = 0; i < 6; i++) spawnCreatureNear(lat, lng);
+  }
+}
+initWorldCreatures();
 
-    <!-- PLAYERS AREA -->
-    <div id="players-zone"></div>
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, c] of worldCreatures) {
+    if (c.expiresAt < now) worldCreatures.delete(id);
+  }
+}, 60 * 1000);
 
-    <!-- ACTION BAR -->
-    <div id="action-bar">
-      <div id="bet-zone" class="hidden">
-        <div class="chip-row" id="chip-row"></div>
-        <div class="bet-display">
-          Bet: <span id="bet-amount">$0</span>
-          <button class="btn-sm btn-gray" id="btn-clear-bet">✕ Clear</button>
-        </div>
-        <button class="btn-casino btn-gold" id="btn-place-bet">Place Bet</button>
-      </div>
-      <div id="play-zone" class="hidden">
-        <button class="btn-casino btn-green" id="btn-hit">Hit</button>
-        <button class="btn-casino btn-red" id="btn-stand">Stand</button>
-        <button class="btn-casino btn-gold" id="btn-double" style="display:none">Double</button>
-        <button class="btn-casino btn-blue" id="btn-split" style="display:none">Split</button>
-        <button class="btn-casino btn-gray" id="btn-surrender" style="display:none">Surrender</button>
-      </div>
-      <div id="insurance-zone" class="hidden">
-        <p class="ins-label">Take Insurance? (pays 2:1)</p>
-        <div class="ins-row">
-          <input type="number" id="ins-amount" placeholder="Amount..." min="1"/>
-          <button class="btn-casino btn-gold btn-sm" id="btn-insurance">Take</button>
-          <button class="btn-casino btn-gray btn-sm" id="btn-no-insurance">Skip</button>
-        </div>
-      </div>
-      <div id="waiting-zone" class="hidden">
-        <p id="waiting-text"></p>
-      </div>
-      <div id="host-deal-zone" class="hidden">
-        <button class="btn-casino btn-gold" id="btn-deal-now">Deal Now →</button>
-      </div>
-    </div>
+function getNearby(lat, lng, radius = 0.018) {
+  const result = [];
+  for (const c of worldCreatures.values()) {
+    const d = Math.hypot(c.lat - lat, c.lng - lng);
+    if (d <= radius) result.push(c);
+  }
+  return result;
+}
 
-    <!-- LOG -->
-    <div id="log-panel">
-      <div id="log-entries"></div>
-    </div>
-  </div>
-</div>
+function calcDamage(atk, def, power, level) {
+  const base = ((2 * level / 5 + 2) * power * atk / def) / 50 + 2;
+  return Math.max(1, Math.floor(base * (0.85 + Math.random() * 0.15)));
+}
 
-<!-- MODAL -->
-<div id="modal" class="hidden">
-  <div id="modal-inner">
-    <div id="modal-msg"></div>
-    <button class="btn-casino btn-gray" onclick="document.getElementById('modal').classList.add('hidden')">OK</button>
-  </div>
-</div>
+function ensureActiveCreature(player) {
+  if (player.activeCreature) return;
+  if (player.collection.length > 0) {
+    const caught = player.collection[0];
+    const def = CREATURE_DEFS.find(d => d.id === caught.defId);
+    const maxHp = Math.floor(def.baseHp * (1 + caught.level * 0.1));
+    player.activeCreature = { def, level: caught.level, currentHp: maxHp, maxHp };
+  } else {
+    const def = CREATURE_DEFS.find(d => d.id === 'stonex');
+    const maxHp = Math.floor(def.baseHp * 1.5);
+    player.activeCreature = { def, level: 5, currentHp: maxHp, maxHp };
+  }
+}
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="/js/client.js"></script>
-</body>
-</html>
+// ─── SOCKET.IO ────────────────────────────────────────────────────────────────
+io.on('connection', (socket) => {
+  socket.on('join', ({ username, lat, lng }) => {
+    const player = {
+      id: socket.id,
+      username: (username || 'Trainer').slice(0, 20),
+      lat: lat || 0, lng: lng || 0,
+      level: 1, xp: 0, coins: 500,
+      collection: [], activeCreature: null,
+      joinedAt: Date.now()
+    };
+    players.set(socket.id, player);
+
+    for (let i = 0; i < 10; i++) spawnCreatureNear(player.lat, player.lng);
+    const nearby = getNearby(player.lat, player.lng);
+
+    socket.emit('joined', { player, nearbyCreatures: nearby, creatureDefs: CREATURE_DEFS });
+
+    const others = [];
+    for (const [id, p] of players) {
+      if (id !== socket.id) others.push({ id, username: p.username, lat: p.lat, lng: p.lng, level: p.level });
+    }
+    socket.emit('existingPlayers', others);
+    socket.broadcast.emit('playerJoined', { id: socket.id, username: player.username, lat: player.lat, lng: player.lng, level: player.level });
+  });
+
+  socket.on('move', ({ lat, lng }) => {
+    const p = players.get(socket.id);
+    if (!p) return;
+    p.lat = lat; p.lng = lng;
+    if (Math.random() < 0.4) {
+      spawnCreatureNear(lat, lng);
+      socket.emit('creaturesUpdate', getNearby(lat, lng));
+    }
+    socket.broadcast.emit('playerMoved', { id: socket.id, lat, lng });
+  });
+
+  socket.on('getCreatures', ({ lat, lng }) => {
+    socket.emit('creaturesUpdate', getNearby(lat, lng));
+  });
+
+  socket.on('encounter', ({ creatureId }) => {
+    const c = worldCreatures.get(creatureId);
+    if (!c) { socket.emit('encounterError', 'This creature has fled!'); return; }
+    const def = CREATURE_DEFS.find(d => d.id === c.defId);
+    socket.emit('encounterStart', { creature: c, def });
+  });
+
+  socket.on('startBattle', ({ creatureId }) => {
+    const player = players.get(socket.id);
+    const wild = worldCreatures.get(creatureId);
+    if (!player || !wild) { socket.emit('battleError', 'Cannot start battle'); return; }
+
+    ensureActiveCreature(player);
+    const wildDef = CREATURE_DEFS.find(d => d.id === wild.defId);
+    const wildMaxHp = Math.floor(wildDef.baseHp * (1 + wild.level * 0.1));
+
+    const battle = {
+      id: uuidv4(),
+      playerId: socket.id,
+      wildCreatureId: creatureId,
+      wildDef, wildLevel: wild.level,
+      wildCurrentHp: wildMaxHp, wildMaxHp,
+      playerDef: player.activeCreature.def,
+      playerLevel: player.activeCreature.level,
+      playerCurrentHp: player.activeCreature.currentHp,
+      playerMaxHp: player.activeCreature.maxHp,
+      turn: 'player', log: []
+    };
+    activeBattles.set(battle.id, battle);
+    socket.emit('battleStarted', battle);
+  });
+
+  socket.on('battleAttack', ({ battleId, abilityIndex }) => {
+    const b = activeBattles.get(battleId);
+    if (!b || b.playerId !== socket.id || b.turn !== 'player') return;
+
+    const ability = b.playerDef.abilities[abilityIndex];
+    if (!ability) return;
+
+    let dmg = 0, heal = 0;
+    if (ability.power > 0) {
+      dmg = calcDamage(b.playerDef.baseAtk, b.wildDef.baseDef, ability.power, b.playerLevel);
+      b.wildCurrentHp = Math.max(0, b.wildCurrentHp - dmg);
+    }
+    if (ability.heal) {
+      heal = ability.heal;
+      b.playerCurrentHp = Math.min(b.playerMaxHp, b.playerCurrentHp + heal);
+    }
+    b.log.push({ type: 'playerAttack', ability: ability.name, damage: dmg, heal });
+
+    if (b.wildCurrentHp <= 0) { resolveBattle(socket, b, 'playerWon'); return; }
+
+    b.turn = 'wild';
+    socket.emit('battleUpdate', { battle: b, latestLog: b.log.slice(-1) });
+
+    setTimeout(() => {
+      if (!activeBattles.has(b.id)) return;
+      const wa = b.wildDef.abilities[Math.floor(Math.random() * b.wildDef.abilities.length)];
+      let wdmg = 0;
+      if (wa.power > 0) {
+        wdmg = calcDamage(b.wildDef.baseAtk, b.playerDef.baseDef, wa.power, b.wildLevel);
+        b.playerCurrentHp = Math.max(0, b.playerCurrentHp - wdmg);
+      }
+      b.log.push({ type: 'wildAttack', ability: wa.name, damage: wdmg });
+      if (b.playerCurrentHp <= 0) { resolveBattle(socket, b, 'wildWon'); return; }
+      b.turn = 'player';
+      socket.emit('battleUpdate', { battle: b, latestLog: b.log.slice(-1) });
+    }, 1200);
+  });
+
+  socket.on('battleCatch', ({ battleId }) => {
+    const b = activeBattles.get(battleId);
+    if (!b || b.playerId !== socket.id) return;
+    const player = players.get(socket.id);
+    if (!player) return;
+
+    const hpRatio = b.wildCurrentHp / b.wildMaxHp;
+    const catchChance = b.wildDef.catchRate * (2 - hpRatio);
+    if (Math.random() < catchChance) {
+      const caught = { id: uuidv4(), defId: b.wildDef.id, level: b.wildLevel, caughtAt: Date.now() };
+      player.collection.push(caught);
+      worldCreatures.delete(b.wildCreatureId);
+      const xpGained = b.wildDef.xpReward;
+      player.xp += xpGained;
+      const newLevel = Math.floor(1 + Math.sqrt(player.xp / 100));
+      if (newLevel > player.level) player.level = newLevel;
+      socket.broadcast.emit('creatureGone', { creatureId: b.wildCreatureId });
+      resolveBattle(socket, b, 'caught', { caught, xpGained, playerLevel: player.level });
+    } else {
+      b.log.push({ type: 'catchFailed', message: `${b.wildDef.name} broke free!` });
+      socket.emit('catchFailed', { battle: b, log: b.log.slice(-1) });
+    }
+  });
+
+  socket.on('battleRun', ({ battleId }) => {
+    activeBattles.delete(battleId);
+    socket.emit('battleEnded', { result: 'fled' });
+  });
+
+  socket.on('disconnect', () => {
+    players.delete(socket.id);
+    socket.broadcast.emit('playerLeft', { id: socket.id });
+  });
+});
+
+function resolveBattle(socket, battle, result, extra = {}) {
+  activeBattles.delete(battle.id);
+  if (result === 'playerWon') {
+    const player = players.get(battle.playerId);
+    if (player) {
+      player.xp += Math.floor(battle.wildDef.xpReward * 0.5);
+      player.level = Math.max(player.level, Math.floor(1 + Math.sqrt(player.xp / 100)));
+    }
+  }
+  socket.emit('battleEnded', { result, battle, ...extra });
+}
+
+app.get('/health', (_, res) => res.json({ status: 'ok', players: players.size, creatures: worldCreatures.size }));
+app.get('/api/defs', (_, res) => res.json(CREATURE_DEFS));
+
+const PORT = process.env.PORT || 3000;
+httpServer.listen(PORT, () => console.log(`NexaHunters running on port ${PORT}`));
