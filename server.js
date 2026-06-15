@@ -18,7 +18,7 @@ app.use(express.json());
 // ─── CREATURE DEFINITIONS ────────────────────────────────────────────────────
 const CREATURE_DEFS = [
   {
-    id: 'solaris', name: 'Solaris', title: 'Dawn Sovereign',
+    id: 'lumin', name: 'Lumin', title: 'Light Weaver',
     type: 'light', rarity: 'legendary',
     baseHp: 150, baseAtk: 95, baseDef: 85, baseSpd: 100,
     catchRate: 0.05, xpReward: 500, spawnWeight: 1,
@@ -31,7 +31,7 @@ const CREATURE_DEFS = [
     ]
   },
   {
-    id: 'pyraxis', name: 'Pyraxis', title: 'Inferno Drake',
+    id: 'blazor', name: 'Blazor', title: 'Fire Born',
     type: 'fire', rarity: 'rare',
     baseHp: 120, baseAtk: 110, baseDef: 65, baseSpd: 90,
     catchRate: 0.1, xpReward: 300, spawnWeight: 5,
@@ -44,7 +44,7 @@ const CREATURE_DEFS = [
     ]
   },
   {
-    id: 'aquavorn', name: 'Aquavorn', title: 'Tide Leviathan',
+    id: 'wavix', name: 'Wavix', title: 'Tide Rider',
     type: 'water', rarity: 'uncommon',
     baseHp: 130, baseAtk: 75, baseDef: 90, baseSpd: 85,
     catchRate: 0.15, xpReward: 200, spawnWeight: 8,
@@ -57,7 +57,7 @@ const CREATURE_DEFS = [
     ]
   },
   {
-    id: 'verdanis', name: 'Verdanis', title: 'Grove Keeper',
+    id: 'fernox', name: 'Fernox', title: 'Grove Guard',
     type: 'nature', rarity: 'uncommon',
     baseHp: 110, baseAtk: 80, baseDef: 80, baseSpd: 95,
     catchRate: 0.15, xpReward: 200, spawnWeight: 8,
@@ -70,7 +70,7 @@ const CREATURE_DEFS = [
     ]
   },
   {
-    id: 'fulgrath', name: 'Fulgrath', title: 'Storm Predator',
+    id: 'joltz', name: 'Joltz', title: 'Storm Runner',
     type: 'electric', rarity: 'rare',
     baseHp: 100, baseAtk: 105, baseDef: 70, baseSpd: 115,
     catchRate: 0.1, xpReward: 300, spawnWeight: 5,
@@ -83,7 +83,7 @@ const CREATURE_DEFS = [
     ]
   },
   {
-    id: 'umbravex', name: 'Umbravex', title: 'Void Specter',
+    id: 'vexon', name: 'Vexon', title: 'Dark Stalker',
     type: 'dark', rarity: 'rare',
     baseHp: 115, baseAtk: 100, baseDef: 75, baseSpd: 105,
     catchRate: 0.1, xpReward: 300, spawnWeight: 5,
@@ -96,7 +96,7 @@ const CREATURE_DEFS = [
     ]
   },
   {
-    id: 'glacivyn', name: 'Glacivyn', title: 'Frost Seraph',
+    id: 'frigix', name: 'Frigix', title: 'Frost Bringer',
     type: 'ice', rarity: 'uncommon',
     baseHp: 105, baseAtk: 85, baseDef: 95, baseSpd: 80,
     catchRate: 0.15, xpReward: 200, spawnWeight: 8,
@@ -109,7 +109,7 @@ const CREATURE_DEFS = [
     ]
   },
   {
-    id: 'terrakor', name: 'Terrakor', title: 'Stone Ancient',
+    id: 'stonex', name: 'Stonex', title: 'Earth Crusher',
     type: 'earth', rarity: 'common',
     baseHp: 160, baseAtk: 70, baseDef: 120, baseSpd: 45,
     catchRate: 0.25, xpReward: 100, spawnWeight: 15,
@@ -195,7 +195,7 @@ function ensureActiveCreature(player) {
     const maxHp = Math.floor(def.baseHp * (1 + caught.level * 0.1));
     player.activeCreature = { def, level: caught.level, currentHp: maxHp, maxHp };
   } else {
-    const def = CREATURE_DEFS.find(d => d.id === 'terrakor');
+    const def = CREATURE_DEFS.find(d => d.id === 'stonex');
     const maxHp = Math.floor(def.baseHp * 1.5);
     player.activeCreature = { def, level: 5, currentHp: maxHp, maxHp };
   }

@@ -2,7 +2,7 @@
 
 // ─── CREATURE SVG ART ────────────────────────────────────────────────────────
 const CREATURE_SVGS = {
-  solaris: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  lumin: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="lg1" cx="50%" cy="40%" r="65%">
       <stop offset="0%" stop-color="#FFFDE7"/>
@@ -38,7 +38,7 @@ const CREATURE_SVGS = {
     <circle cx="108" cy="78" r="4"/><circle cx="12" cy="88" r="3"/>
   </g></svg>`,
 
-  pyraxis: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  blazor: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="pg1" cx="45%" cy="35%" r="65%">
       <stop offset="0%" stop-color="#FF8C00"/>
@@ -94,7 +94,7 @@ const CREATURE_SVGS = {
     <ellipse cx="70" cy="70" rx="5" ry="3" transform="rotate(20,70,70)"/>
   </g></svg>`,
 
-  aquavorn: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  wavix: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="aq1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#B2EBF2"/>
@@ -148,7 +148,7 @@ const CREATURE_SVGS = {
     <circle cx="20" cy="90" r="2.5"/><circle cx="100" cy="85" r="3.5"/>
   </g></svg>`,
 
-  verdanis: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  fernox: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="sg1" cx="50%" cy="35%" r="65%">
       <stop offset="0%" stop-color="#C8E6C9"/>
@@ -211,7 +211,7 @@ const CREATURE_SVGS = {
     <path d="M15,90 Q18,84 24,90 Q18,96 15,90 Z"/>
   </g></svg>`,
 
-  fulgrath: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  joltz: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="vg1" cx="45%" cy="35%" r="65%">
       <stop offset="0%" stop-color="#FFF9C4"/>
@@ -265,7 +265,7 @@ const CREATURE_SVGS = {
     <circle cx="15" cy="80" r="3"/><circle cx="108" cy="35" r="2.5"/>
   </g></svg>`,
 
-  umbravex: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  vexon: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="sfg1" cx="50%" cy="40%" r="65%">
       <stop offset="0%" stop-color="#CE93D8"/>
@@ -319,7 +319,7 @@ const CREATURE_SVGS = {
     <circle cx="110" cy="75" r="3.5" filter="url(#sfglow)"/>
   </g></svg>`,
 
-  glacivyn: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  frigix: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="fg1" cx="50%" cy="35%" r="65%">
       <stop offset="0%" stop-color="#E0F7FA"/>
@@ -392,7 +392,7 @@ const CREATURE_SVGS = {
     <polygon points="8,80 10,75 12,80 10,85"/><polygon points="110,78 112,73 114,78 112,83"/>
   </g></svg>`,
 
-  terrakor: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  stonex: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="tg1" cx="50%" cy="35%" r="65%">
       <stop offset="0%" stop-color="#A1887F"/>
@@ -657,7 +657,7 @@ const Game = {
   },
 
   generateOfflineCreatures(lat, lng) {
-    const ids = ['solaris','pyraxis','aquavorn','verdanis','fulgrath','umbravex','glacivyn','terrakor'];
+    const ids = ['lumin','blazor','wavix','fernox','joltz','vexon','frigix','stonex'];
     const creatures = [];
     for (let i = 0; i < 12; i++) {
       creatures.push({
@@ -748,7 +748,7 @@ const Game = {
 
   addCreatureMarker(creature) {
     const def = this.getDef(creature.defId);
-    const svg = CREATURE_SVGS[def.id] || CREATURE_SVGS.terrakor;
+    const svg = CREATURE_SVGS[def.id] || CREATURE_SVGS.stonex;
     const html = `<div class="creature-marker-wrap rarity-${def.rarity}">
       <div class="creature-marker-inner" style="background:${def.colors.primary}20">
         <svg viewBox="0 0 120 120" style="width:44px;height:44px">${svg.replace(/<svg[^>]*>/,'').replace('</svg>','')}</svg>
@@ -830,7 +830,7 @@ const Game = {
     document.getElementById('enc-level').textContent = `Lv.${creature.level}`;
     document.getElementById('enc-type').textContent = (typeConf.icon + ' ' + def.type).toUpperCase();
     document.getElementById('enc-type').className = `enc-type-badge type-${def.type}`;
-    document.getElementById('enc-svg').innerHTML = CREATURE_SVGS[def.id] || CREATURE_SVGS.terrakor;
+    document.getElementById('enc-svg').innerHTML = CREATURE_SVGS[def.id] || CREATURE_SVGS.stonex;
     document.getElementById('enc-aura').style.background = `radial-gradient(circle, ${typeConf.glow}66 0%, transparent 70%)`;
 
     document.getElementById('btn-battle').onclick = () => this.startBattle(creature.id);
@@ -854,7 +854,7 @@ const Game = {
     const wildDef = this.getDef(creature.defId);
     const wildMaxHp = Math.floor(wildDef.baseHp * (1 + creature.level * 0.1));
 
-    const playerDef = State.creatureDefs.find(d => d.id === 'terrakor') || State.creatureDefs[0];
+    const playerDef = State.creatureDefs.find(d => d.id === 'stonex') || State.creatureDefs[0];
     const playerMaxHp = Math.floor((playerDef?.baseHp || 100) * 1.5);
 
     State.currentBattle = {
@@ -874,8 +874,8 @@ const Game = {
     document.getElementById('b-player-name').textContent = battle.playerDef.name;
     document.getElementById('b-player-level').textContent = `Lv.${battle.playerLevel}`;
 
-    document.getElementById('b-wild-svg').innerHTML = CREATURE_SVGS[battle.wildDef.id] || CREATURE_SVGS.terrakor;
-    document.getElementById('b-player-svg').innerHTML = CREATURE_SVGS[battle.playerDef.id] || CREATURE_SVGS.terrakor;
+    document.getElementById('b-wild-svg').innerHTML = CREATURE_SVGS[battle.wildDef.id] || CREATURE_SVGS.stonex;
+    document.getElementById('b-player-svg').innerHTML = CREATURE_SVGS[battle.playerDef.id] || CREATURE_SVGS.stonex;
 
     this.updateBattleHPs(battle);
 
@@ -1090,7 +1090,7 @@ const Game = {
     grid.innerHTML = coll.map(c => {
       const def = this.getDef(c.defId);
       return `<div class="coll-card" style="--card-glow:${def.colors?.primary||'#888'}">
-        <div class="coll-card-svg">${CREATURE_SVGS[def.id] || CREATURE_SVGS.terrakor}</div>
+        <div class="coll-card-svg">${CREATURE_SVGS[def.id] || CREATURE_SVGS.stonex}</div>
         <div class="coll-card-name">${def.name}</div>
         <div class="coll-card-info">
           <span class="coll-card-level">Lv.${c.level}</span>
@@ -1110,7 +1110,7 @@ const Game = {
     grid.innerHTML = State.creatureDefs.map(def => {
       const have = caughtIds.has(def.id);
       return `<div class="ndex-card ${have ? '' : 'locked'}">
-        <div class="ndex-svg">${CREATURE_SVGS[def.id] || CREATURE_SVGS.terrakor}</div>
+        <div class="ndex-svg">${CREATURE_SVGS[def.id] || CREATURE_SVGS.stonex}</div>
         <div class="ndex-name">${def.name}</div>
       </div>`;
     }).join('');
